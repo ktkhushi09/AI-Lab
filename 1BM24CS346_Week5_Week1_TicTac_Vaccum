@@ -1,0 +1,59 @@
+#tic tac toe
+import random
+board = [" " for _ in range(9)]
+def display():
+    print(board[0],"|",board[1],"|",board[2])
+    print(board[3],"|",board[4],"|",board[5])
+    print(board[6],"|",board[7],"|",board[8])
+def win(player):
+    positions = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
+    for a,b,c in positions:
+        if board[a] == board[b] == board[c] == player:
+            return True
+    return False
+def game():
+    for i in range(9):
+        display()
+        if i % 2 == 0:
+            print("Your turn")
+            n=int(input("Enter position (1-9): "))
+            if board[n-1] != " ":
+                print("Position already occupied!")
+                continue
+            board[n-1] = "X"
+            if win("X"):
+                display()
+                print("You win!")
+                return
+        else:
+            print("Computer's turn")
+            position = random.randint(0, 8)
+            while board[position] != " ":
+                position = random.randint(0, 8)
+            board[position] = "O"
+            if win("O"):
+                display()
+                print("Computer wins!")
+                return
+    display()
+    print("It's a draw!")
+game()
+
+#cleaning agent
+rooms={
+    "A":"Dirty",
+    "B":"Dirty"
+}
+position=input("Enter vacuum position A or B: ")
+while True:
+    if rooms["A"]=="Clean" and rooms["B"]=="Clean":
+        print("Goal achieved! Both rooms are clean.")
+        break
+    print("Vacuum is in room", position)
+    if rooms[position]=="Dirty":
+        print("Cleaning room", position)
+        rooms[position]="Clean"
+    if position=="A":
+        position="B"
+    else:
+        position="A"
