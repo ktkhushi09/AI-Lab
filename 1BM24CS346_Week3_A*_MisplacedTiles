@@ -1,0 +1,48 @@
+initial=[2,8,3,
+        1,6,4,
+        7,0,5]
+goal = [1,2,3,
+        8,0,4,
+        7,6,5]
+def h(state):
+    count=0
+    for i in range(9):
+        if state[i]!=0 and state[i]!=goal[i]:
+            count+=1
+    return count
+def print_board(state):
+    for i in range(0, 9, 3):
+        print(state[i:i+3])
+    print()
+open_list=[(initial,0,[initial])]
+while open_list:
+    current=min(open_list,
+                  key=lambda x:x[1] + h(x[0]))
+    open_list.remove(current)
+    state=current[0]
+    g=current[1]
+    path=current[2]
+    if state==goal:
+        print("Goal reached!")
+        print("Cost g(n) =", g)
+        for s in path:
+            print_board(s)
+        break
+    blank=state.index(0)
+    row=blank // 3
+    col=blank % 3
+    moves=[(-1,0),(1,0),(0,-1),(0,1)]
+    for dr, dc in moves:
+        r=row+dr
+        c=col+dc
+        if 0<=r<3 and 0<=c<3:
+            new_pos=r*3+c
+            new_state=state.copy()
+            new_state[blank], new_state[new_pos] = \
+                new_state[new_pos], new_state[blank]
+            new_g=g+1
+            new_h=h(new_state)
+            f=new_g+new_h
+            open_list.append(
+                (new_state,new_g,path+[new_state])
+            )
