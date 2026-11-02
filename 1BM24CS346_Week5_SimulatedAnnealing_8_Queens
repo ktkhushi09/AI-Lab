@@ -1,0 +1,40 @@
+import random
+import math
+N = 8
+def cost(board):
+    c = 0
+    for i in range(N):
+        for j in range(i + 1, N):
+            if board[i] == board[j] or abs(board[i] - board[j]) == abs(i - j):
+                c += 1
+    return c
+def simulated_annealing():
+    while True:
+        board = [random.randint(0, N-1) for _ in range(N)]
+        print("Current state:", board)
+        print("Initial cost:", cost(board))
+        T = 100
+        cooling = 0.95
+        while T > 0.01:
+            current = cost(board)
+            if current == 0:
+                print("Solution found")
+                print("Final state:", board)
+                print("Final cost:", cost(board))
+                return
+            neighbour = board[:]
+            col = random.randint(0, N-1)
+            row = random.randint(0, N-1)
+            while row == board[col]:
+                row = random.randint(0, N-1)
+            neighbour[col] = row
+            new_cost = cost(neighbour)
+            delta = current - new_cost
+            if delta > 0:
+                board = neighbour
+            else:
+                p = math.exp(delta / T)
+                if random.random() < p:
+                    board = neighbour
+            T = T * cooling
+simulated_annealing()
