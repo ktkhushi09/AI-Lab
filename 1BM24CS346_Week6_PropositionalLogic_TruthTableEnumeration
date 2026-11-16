@@ -1,0 +1,25 @@
+def implies(p,q):
+    return not p or q
+def main():
+    print("P Q R | Q->P P->~Q Q|R | KB")
+    models=[]
+    for p in [False,True]:
+        for q in [False,True]:
+            for r in [False,True]:
+                a=implies(q,p)
+                b=implies(p,not q)
+                c=q or r
+                kb=a and b and c
+                print(p,q,r,"|",a,b,c,"|",kb)
+                if kb:
+                    models.append((p,q,r))
+    print("\nModels of KB:", models)
+    queries={
+        "R":lambda p,q,r:r,
+        "R->P":lambda p,q,r:implies(r,p),
+        "Q->R":lambda p,q,r:implies(q,r)
+    }
+    for name, query in queries.items():
+        result=all(query(*m) for m in models)
+        print("KB entails",name,":",result)
+main()
