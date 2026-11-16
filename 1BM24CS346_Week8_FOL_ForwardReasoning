@@ -1,0 +1,60 @@
+facts=[
+    ("American","Robert"),
+    ("Missile","T1"),
+    ("Owns","A","T1"),
+    ("Enemy","A","America")
+]
+rules=[
+    ([("Missile","x")],
+     ("Weapon","x")),
+    ([("Missile","x"), ("Owns","A","x")],
+     ("Sells","Robert","x","A")),
+    ([("Enemy","x","America")],
+     ("Hostile","x")),
+    ([("American","p"), ("Weapon","q"),
+      ("Sells","p","q","r"), ("Hostile","r")],
+     ("Criminal","p"))
+]
+def match(pattern,fact,subs):
+    if pattern[0]!=fact[0]:
+        return None
+    if len(pattern)!=len(fact):
+        return None
+    for p,f in zip(pattern[1:],fact[1:]):
+        if p.islower():
+            if p in subs and subs[p]!=f:
+                return None
+            subs[p]=f
+        elif p!=f:
+            return None
+    return subs
+def forward_chaining():
+    while True:
+        new_facts=[]
+        for conditions,conclusion in rules:
+            matches = [({},conditions)]
+            for condition in conditions:
+                next_matches=[]
+                for subs, _ in matches:
+                    for fact in facts:
+                        result=match(condition, fact, subs.copy())
+                        if result is not None:
+                            next_matches.append((result, conditions))
+                matches = next_matches
+            for subs, _ in matches:
+                fact=tuple(subs.get(x,x) for x in conclusion)
+                if fact not in facts and fact not in new_facts:
+                    new_facts.append(fact)
+        if not new_facts:
+            break
+        facts.extend(new_facts)
+        for fact in new_facts:
+            print("Derived:",fact)
+        if ("Criminal","Robert") in facts:
+            break
+    print("\nFinal Result:")
+    if ("Criminal","Robert") in facts:
+        print("Robert is Criminal")
+    else:
+        print("Cannot prove Robert is Criminal")
+forward_chaining()
