@@ -1,71 +1,92 @@
+clauses = [
+    [(True, "food", ("x",)),
+     (False, "likes", ("John", "x"))],
+    [(True, "eats", ("y", "z")),
+     (False, "killed", ("y",)),
+     (False, "food", ("z",))],
+    [(False, "eats", ("Anil", "Peanuts"))],
+    [(False, "alive", ("Anil",))],
+    [(True, "alive", ("x",)),
+     (True, "killed", ("x",))],
+    [(True, "likes", ("John", "Peanuts"))]
+]
+count = 0
 def is_variable(x):
-    return x[0].islower()
-def substitute(x, subs):
-    while x in subs:
-        x=subs[x]
+    return isinstance(x, str) and x.islower()
+def apply(x, subs):
+    while is_variable(x) and x in subs:
+        x = subs[x]
     return x
-def unify(a,b,subs):
-    a=substitute(a,subs)
-    b=substitute(b,subs)
-    if a==b:
+def unify(x, y, subs):
+    x = apply(x, subs)
+    y = apply(y, subs)
+    if x == y:
         return True
-    if is_variable(a):
-        subs[a]=b
+    if is_variable(x):
+        subs[x] = y
         return True
-    if is_variable(b):
-        subs[b]=a
+    if is_variable(y):
+        subs[y] = x
         return True
     return False
-def parse(literal):
-    if literal.startswith("~"):
-        literal=literal[1:]
-        neg=True
-    else:
-        neg=False
-    name=literal[:literal.index("(")]
-    args=literal[literal.index("(")+1:-1].split(",")
-    return neg, name, args
-def resolve(c1,c2):
+def resolve(c1, c2):
+    global count
+    count += 1
+    new_clause = []
+    for neg, pred, args in c2:
+        args = tuple(
+            a + str(count) if is_variable(a) else a
+            for a in args
+        )
+        new_clause.append((neg, pred, args))
+    c2 = new_clause
+    resolvents = []
     for l1 in c1:
         for l2 in c2:
-            n1,p1,a1=parse(l1)
-            n2,p2,a2=parse(l2)
-            if n1!=n2 and p1==p2 and len(a1)==len(a2):
-                subs={}
-                valid=True
-                for x,y in zip(a1,a2):
-                    if not unify(x,y,subs):
-                        valid=False
-                        break
-                if valid:
-                    new_clause=[x for x in c1 if x!=l1]
-                    new_clause+=[x for x in c2 if x!=l2]
-                    result=[]
-                    for lit in new_clause:
-                        neg,name,args=parse(lit)
-                        args=[substitute(x,subs) for x in args]
-                        prefix="~" if neg else ""
-                        result.append(prefix+name+"("+",".join(args)+")")
-                    return result
-    return None
-clauses=[
-    ["~P(x)","Q(x)"],
-    ["P(A)"],
-    ["~Q(A)"]
-]
-while True:
-    new_clauses=[]
-    for i in range(len(clauses)):
-        for j in range(i+1, len(clauses)):
-            result=resolve(clauses[i],clauses[j])
-            if result==[]:
-                print("Empty clause found")
-                print("Resolution successful")
-                exit()
-            if result is not None:
-                if result not in clauses and result not in new_clauses:
-                    new_clauses.append(result)
-    if not new_clauses:
-        print("Resolution failed")
-        break
-    clauses+=new_clauses
+            if l1[0] == l2[0] or l1[1] != l2[1]:
+                continue
+            if len(l1[2]) != len(l2[2]):
+                continue
+            subs = {}
+            success = True
+            for a, b in zip(l1[2], l2[2]):
+                if not unify(a, b, subs):
+                    success = False
+                    break
+            if success:
+                result = []
+                for lit in c1:
+                    if lit != l1:
+                        result.append((
+                            lit[0], lit[1],
+                            tuple(apply(a, subs) for a in lit[2])
+                        ))
+                for lit in c2:
+                    if lit != l2:
+                        result.append((
+                            lit[0], lit[1],
+                            tuple(apply(a, subs) for a in lit[2])
+                        ))
+                if result not in resolvents:
+                    resolvents.append(result)
+    return resolvents
+def resolution():
+    known = list(clauses)
+    while True:
+        new = []
+        for i in range(len(known)):
+            for j in range(i + 1, len(known)):
+                results = resolve(known[i], known[j])
+                for clause in results:
+                    if not clause:
+                        print("Empty clause obtained!")
+                        print("Contradiction found.")
+                        print("John likes peanuts: PROVED")
+                        return
+                    if clause not in known and clause not in new:
+                        new.append(clause)
+        if not new:
+            print("No contradiction found.")
+            return
+        known.extend(new)
+resolution()
