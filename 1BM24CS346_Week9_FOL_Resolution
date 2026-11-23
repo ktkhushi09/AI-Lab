@@ -1,0 +1,71 @@
+def is_variable(x):
+    return x[0].islower()
+def substitute(x, subs):
+    while x in subs:
+        x=subs[x]
+    return x
+def unify(a,b,subs):
+    a=substitute(a,subs)
+    b=substitute(b,subs)
+    if a==b:
+        return True
+    if is_variable(a):
+        subs[a]=b
+        return True
+    if is_variable(b):
+        subs[b]=a
+        return True
+    return False
+def parse(literal):
+    if literal.startswith("~"):
+        literal=literal[1:]
+        neg=True
+    else:
+        neg=False
+    name=literal[:literal.index("(")]
+    args=literal[literal.index("(")+1:-1].split(",")
+    return neg, name, args
+def resolve(c1,c2):
+    for l1 in c1:
+        for l2 in c2:
+            n1,p1,a1=parse(l1)
+            n2,p2,a2=parse(l2)
+            if n1!=n2 and p1==p2 and len(a1)==len(a2):
+                subs={}
+                valid=True
+                for x,y in zip(a1,a2):
+                    if not unify(x,y,subs):
+                        valid=False
+                        break
+                if valid:
+                    new_clause=[x for x in c1 if x!=l1]
+                    new_clause+=[x for x in c2 if x!=l2]
+                    result=[]
+                    for lit in new_clause:
+                        neg,name,args=parse(lit)
+                        args=[substitute(x,subs) for x in args]
+                        prefix="~" if neg else ""
+                        result.append(prefix+name+"("+",".join(args)+")")
+                    return result
+    return None
+clauses=[
+    ["~P(x)","Q(x)"],
+    ["P(A)"],
+    ["~Q(A)"]
+]
+while True:
+    new_clauses=[]
+    for i in range(len(clauses)):
+        for j in range(i+1, len(clauses)):
+            result=resolve(clauses[i],clauses[j])
+            if result==[]:
+                print("Empty clause found")
+                print("Resolution successful")
+                exit()
+            if result is not None:
+                if result not in clauses and result not in new_clauses:
+                    new_clauses.append(result)
+    if not new_clauses:
+        print("Resolution failed")
+        break
+    clauses+=new_clauses
